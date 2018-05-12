@@ -95,13 +95,47 @@ var xonixGame = (function () {
                 if (area[xonixX] && area[xonixX][xonixY] === 0)
                     return true;
             };
-            var tryCut = function () {
-                for (var x = 0; x < width; x++)
-                    for (var y = 0; y < height; y++)
-                        if (area[x][y] === 2)
-                            area[x][y] = 0;
-            };
-            
+            var tryCut = (function () {
+                var fillAreaPart = function (area, part, startX, startY) {
+                    if (!area[startX] || !area[startX][startY] || area[startX][startY] !== 1)
+                        return;
+                    area[startX][startY] = 3;
+                    part.size++;
+                    part.cells.push({ x: startX, y: startY });
+                    fillAreaPart(area, part, startX + 1, startY);
+                    fillAreaPart(area, part, startX - 1, startY);
+                    fillAreaPart(area, part, startX, startY + 1);
+                    fillAreaPart(area, part, startX, startY - 1);
+
+                };
+                return function () {
+                    for (var x = 0; x < width; x++)
+                        for (var y = 0; y < height; y++)
+                            if (area[x][y] === 2)
+                                area[x][y] = 0;
+                    var areaParts = [];
+                    for (var x = 0; x < width; x++)
+                        for (var y = 0; y < height; y++)
+                            if (area[x][y] === 1) {
+                                var part = {
+                                    size: 0,
+                                    cells: []
+                                };
+                                fillAreaPart(area, part, x, y);
+                                areaParts.push(part);
+                            }
+                    for (var x = 0; x < width; x++)
+                        for (y = 0; y < height; y++)
+                            if (area[x][y] === 3)
+                                area[x][y] = 1;
+                    if (areaParts.length < 2)
+                        return;
+                    var minPart = areaParts.sort(function (a, b) { return a.size - b.size; })[0];
+                    for (var key in minPart.cells)
+                        area[minPart.cells[key].x][minPart.cells[key].y] = 0;
+                }
+            })();
+
             return {
                 render: function (canvas) {
                     for (var x = 0; x < width; x++)
