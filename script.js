@@ -8,8 +8,24 @@ var xonixGame = (function () {
     var level = 1;
     var directions = { up: 1, right: 2, bottom: 3, left: 4 };
 
-    var init = function () {
+    var initUI = function () {
         canvas = document.getElementById("canvas").getContext("2d");
+        window.onkeydown = function (e) {
+            switch (e.keyCode) {
+                case 37:
+                    xonix.setDirection(directions.left);
+                    break;
+                case 38:
+                    xonix.setDirection(directions.up);
+                    break;
+                case 39:
+                    xonix.setDirection(directions.right);
+                    break;
+                case 40:
+                    xonix.setDirection(directions.bottom);
+                    break;
+            }
+        }
     }
     var loadResources = function () {
         resources = {};
@@ -30,6 +46,7 @@ var xonixGame = (function () {
                     canvas.fillRect(x, y, width, height);
                 },
                 setDirection: function (direction) {
+                    currentOffsetX = currentOffsetY = 0;
                     switch (direction) {
                         case directions.up:
                             currentOffsetY = -maxVelocity;
@@ -67,7 +84,7 @@ var xonixGame = (function () {
     }
     var render = function (callback) {
         canvas.clearRect(0, 0, width, height);
-        canvas.drawImage(resources.background, 0, 0 - Math.abs(resources.background.height - height) / 2);
+        canvas.drawImage(resources.background, 0, 0 - (resources.background.height - height) / 2);
         for (var key in gameObjects)
             gameObjects[key].render(canvas);
         window.requestAnimationFrame(function () { callback(); });
@@ -76,7 +93,7 @@ var xonixGame = (function () {
     return {
         start: function () {
             console.log("game starting");
-            init();
+            initUI();
             loadResources();
             createGameObjects();
             run();
