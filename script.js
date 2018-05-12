@@ -2,7 +2,6 @@ var xonixGame = (function () {
     var canvas;
     var resources;
     var gameObjects;
-    var xonix;
     var width = 640;
     var height = 360
     var level = 1;
@@ -13,16 +12,16 @@ var xonixGame = (function () {
         window.onkeydown = function (e) {
             switch (e.keyCode) {
                 case 37:
-                    xonix.setDirection(directions.left);
+                    gameObjects.xonix.setDirection(directions.left);
                     break;
                 case 38:
-                    xonix.setDirection(directions.up);
+                    gameObjects.xonix.setDirection(directions.up);
                     break;
                 case 39:
-                    xonix.setDirection(directions.right);
+                    gameObjects.xonix.setDirection(directions.right);
                     break;
                 case 40:
-                    xonix.setDirection(directions.bottom);
+                    gameObjects.xonix.setDirection(directions.bottom);
                     break;
             }
         }
@@ -33,17 +32,20 @@ var xonixGame = (function () {
         resources.background.src = "images/level" + level + ".jpg";
     }
     var createGameObjects = function () {
-        gameObjects = [];
-        xonix = (function () {
-            var x = 300;
-            var y = 0;
-            var [width, height] = [10, 10];
-            var color = "#000";
-            var maxVelocity = 2;
+        gameObjects = {};
+        gameObjects.xonix = (function () {
+            var size = 10;
+            var x = 30 * size;
+            var y = 0 * size;
+            var maxVelocity = 10;
             var [currentOffsetX, currentOffsetY] = [0, 0];
             return {
                 render: function (canvas) {
-                    canvas.fillRect(x, y, width, height);
+                    canvas.fillStyle = "#650F94";
+                    canvas.fillRect(x, y, size, size);
+                    canvas.fillStyle = "#fff";
+                    canvas.fillRect(x + 2, y + 2, size - 4, size - 4);
+                    canvas.fillStyle = "#000";
                 },
                 setDirection: function (direction) {
                     currentOffsetX = currentOffsetY = 0;
@@ -68,26 +70,82 @@ var xonixGame = (function () {
                 update: function () {
                     x += currentOffsetX;
                     y += currentOffsetY;
+                },
+                getX: function () { return x; },
+                getY: function () { return y; }
+            }
+        })();
+        gameObjects.layer = (function () {
+            var [offsetX, offsetY] = [20, 20];
+            var cellSize = 10;
+            var width = 600 / cellSize;
+            var height = 320 / cellSize;
+            var area = [];
+            for (var x = 0; x < width; x++) {
+                area[x] = [];
+                for (var y = 0; y < height; y++)
+                    area[x][y] = 1;
+            }
+            var isXonixIn = false;
+            var isXonixOut = function (xonixX, xonixY) {
+                if (!isXonixIn)
+                    return false;
+                if (!area[xonixX] || !area[xonixX][xonixY])
+                    return true;
+                if (area[xonixX] && area[xonixX][xonixY] === 0)
+                    return true;
+            };
+            var tryCut = function () {
+                for (var x = 0; x < width; x++)
+                    for (var y = 0; y < height; y++)
+                        if (area[x][y] === 2)
+                            area[x][y] = 0;
+            };
+            
+            return {
+                render: function (canvas) {
+                    for (var x = 0; x < width; x++)
+                        for (var y = 0; y < height; y++)
+                            switch (area[x][y]) {
+                                case 1:
+                                    canvas.fillRect(offsetX + x * cellSize, offsetY + y * cellSize, cellSize, cellSize);
+                                    break;
+                                case 2:
+                                    canvas.fillStyle = "#940088";
+                                    canvas.fillRect(offsetX + x * cellSize, offsetY + y * cellSize, cellSize, cellSize);
+                                    canvas.fillStyle = "#000";
+                                    break;
+                            }
+                },
+                update: function () {
+                    var xonixToAreaX = Math.round((gameObjects.xonix.getX() - offsetX) / cellSize);
+                    var xonixToAreaY = Math.round((gameObjects.xonix.getY() - offsetY) / cellSize);
+                    if (area[xonixToAreaX] && area[xonixToAreaX][xonixToAreaY] === 1) {
+                        area[xonixToAreaX][xonixToAreaY] = 2;
+                        isXonixIn = true;
+                    }
+                    if (isXonixOut(xonixToAreaX, xonixToAreaY)) {
+                        isXonixIn = false;
+                        tryCut();
+                    }
                 }
             }
         })();
-        gameObjects.push(xonix);
     }
     var run = function () {
         update();
         render(run);
     }
     var update = function () {
-        for (var key in gameObjects) {
-            gameObjects[key].update();
-        }
+        gameObjects.xonix.update();
+        gameObjects.layer.update();
     }
     var render = function (callback) {
         canvas.clearRect(0, 0, width, height);
         canvas.drawImage(resources.background, 0, 0 - (resources.background.height - height) / 2);
-        for (var key in gameObjects)
-            gameObjects[key].render(canvas);
-        window.requestAnimationFrame(function () { callback(); });
+        gameObjects.layer.render(canvas);
+        gameObjects.xonix.render(canvas);
+        window.requestAnimationFrame(function () { setTimeout(callback, 50); });
     }
 
     return {
