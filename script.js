@@ -4,7 +4,7 @@ var xonixGame = (function () {
     var gameObjects;
     var width = 640;
     var height = 360
-    var level = 1;
+    var lvl;
     var directions = { up: 1, right: 2, bottom: 3, left: 4 };
 
     var initUI = function () {
@@ -29,7 +29,7 @@ var xonixGame = (function () {
     var loadResources = function () {
         resources = {};
         resources.background = new Image();
-        resources.background.src = "images/level" + level + ".jpg";
+        resources.background.src = "images/level" + lvl + ".jpg";
     }
     var createGameObjects = function () {
         gameObjects = {};
@@ -165,6 +165,15 @@ var xonixGame = (function () {
                 }
             }
         })();
+        gameObjects.balls = [];
+        for (var i = 0; i < lvl; i++)
+            gameObjects.balls.push((function () {
+
+                return {
+                    render: function (canvas) { },
+                    update: function () { }
+                }
+            })());
     }
     var run = function () {
         update();
@@ -183,8 +192,9 @@ var xonixGame = (function () {
     }
 
     return {
-        start: function () {
+        start: function (level) {
             console.log("game starting");
+            lvl = typeof level === "number" ? level : 1;
             initUI();
             loadResources();
             createGameObjects();
@@ -193,7 +203,9 @@ var xonixGame = (function () {
         },
         getCanvas: function () {
             return canvas;
-        }
+        },
+        ongameover: function () { },
+        onlevelclear: function () { }
     }
 })();
 
