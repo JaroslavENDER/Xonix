@@ -1,0 +1,10 @@
+AssemblyTitle("Xonix game")
+AssemblyDescription("Xonix game")
+AssemblyCompany("Ender Inc.")
+AssemblyProduct("Xonix")
+AssemblyCopyright("Copyright © Ender Inc. 2018")
+AssemblyTrademark("")
+AssemblyCulture("")
+
+AssemblyVersion("0.1.0.0")
+AssemblyFileVersion("0.1.0.0")
