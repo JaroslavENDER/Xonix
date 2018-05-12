@@ -6,5 +6,5 @@ AssemblyCopyright("Copyright © Ender Inc. 2018")
 AssemblyTrademark("")
 AssemblyCulture("")
 
-AssemblyVersion("0.1.0.0")
-AssemblyFileVersion("0.1.0.0")
+AssemblyVersion("0.2.0.0")
+AssemblyFileVersion("0.2.0.0")
