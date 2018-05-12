@@ -5,26 +5,29 @@ var xonixGame = (function () {
     var width = 640;
     var height = 360
     var lvl;
+    var isRuning;
     var directions = { up: 1, right: 2, bottom: 3, left: 4 };
 
     var initUI = function () {
         canvas = document.getElementById("canvas").getContext("2d");
-        window.onkeydown = function (e) {
-            switch (e.keyCode) {
-                case 37:
-                    gameObjects.xonix.setDirection(directions.left);
-                    break;
-                case 38:
-                    gameObjects.xonix.setDirection(directions.up);
-                    break;
-                case 39:
-                    gameObjects.xonix.setDirection(directions.right);
-                    break;
-                case 40:
-                    gameObjects.xonix.setDirection(directions.bottom);
-                    break;
+        setTimeout(function () {
+            window.onkeydown = function (e) {
+                switch (e.keyCode) {
+                    case 37:
+                        gameObjects.xonix.setDirection(directions.left);
+                        break;
+                    case 38:
+                        gameObjects.xonix.setDirection(directions.up);
+                        break;
+                    case 39:
+                        gameObjects.xonix.setDirection(directions.right);
+                        break;
+                    case 40:
+                        gameObjects.xonix.setDirection(directions.bottom);
+                        break;
+                }
             }
-        }
+        }, 2000);
     }
     var loadResources = function () {
         resources = {};
@@ -129,13 +132,13 @@ var xonixGame = (function () {
                             if (area[x][y] === 3)
                                 area[x][y] = 1;
                     if (areaParts.length < 2)
-                        return;
+                        return areaParts[0].size;
                     var minPart = areaParts.sort(function (a, b) { return a.size - b.size; })[0];
                     for (var key in minPart.cells)
                         area[minPart.cells[key].x][minPart.cells[key].y] = 0;
+                    return areaParts[areaParts.length - 1].size;
                 }
             })();
-
             return {
                 render: function (canvas) {
                     for (var x = 0; x < width; x++)
@@ -160,53 +163,119 @@ var xonixGame = (function () {
                     }
                     if (isXonixOut(xonixToAreaX, xonixToAreaY)) {
                         isXonixIn = false;
-                        tryCut();
+                        this.currentSize = tryCut();
                     }
-                }
+                },
+                isLayer: function (X, Y) {
+                    var screenToLayerX = Math.round((X - offsetX) / cellSize);
+                    var screenToLayerY = Math.round((Y - offsetY) / cellSize);
+                    return area[screenToLayerX] && area[screenToLayerX][screenToLayerY] === 1;
+                },
+                isXonix: function (X, Y) {
+                    var screenToLayerX = Math.round((X - offsetX) / cellSize);
+                    var screenToLayerY = Math.round((Y - offsetY) / cellSize);
+                    return area[screenToLayerX] && area[screenToLayerX][screenToLayerY] === 2;
+                },
+                fullSize: width * height
             }
         })();
         gameObjects.balls = [];
-        for (var i = 0; i < lvl; i++)
+        for (var i = 0; i < 1 * 2; i++)
             gameObjects.balls.push((function () {
+                var x = Math.random() * (width - 80) + 40;
+                var y = Math.random() * (height - 80) + 40;
+                var offsetX = Math.random() * 3 + 3;
+                var offsetY = Math.random() * 3 + 3;
+                if (Math.random() < .5) offsetX *= -1;
+                if (Math.random() < .5) offsetY *= -1;
+                var isHorisontalLayerBorder = function () {
+                    return !gameObjects.layer.isLayer(x, y + offsetY);
+                };
+                var isVerticalLayerBorder = function () {
+                    return !gameObjects.layer.isLayer(x + offsetX, y);
+                };
+                var isXonixCollision = function () {
+                    return gameObjects.layer.isXonix(x + offsetX, y + offsetY);
+                };
 
                 return {
-                    render: function (canvas) { },
-                    update: function () { }
+                    render: function (canvas) {
+                        canvas.beginPath();
+                        canvas.arc(x, y, 5, 0, Math.PI * 2, false);
+                        canvas.closePath();
+                        canvas.fillStyle = "blue";
+                        canvas.fill();  
+                        canvas.fillStyle = "#000";
+                    },
+                    update: function () {
+                        if (isXonixCollision())
+                            game.ongameover();
+                        if (isHorisontalLayerBorder())
+                            offsetY *= -1;
+                        if (isVerticalLayerBorder())
+                            offsetX *= -1;
+                        x += offsetX;
+                        y += offsetY;
+                    }
                 }
             })());
     }
     var run = function () {
+        if (!isRuning) return;
+        if ((gameObjects.layer.currentSize / gameObjects.layer.fullSize) < .25)
+            game.onlevelclear();
         update();
         render(run);
     }
     var update = function () {
         gameObjects.xonix.update();
         gameObjects.layer.update();
+        for (var key in gameObjects.balls)
+            gameObjects.balls[key].update();
     }
     var render = function (callback) {
         canvas.clearRect(0, 0, width, height);
         canvas.drawImage(resources.background, 0, 0 - (resources.background.height - height) / 2);
         gameObjects.layer.render(canvas);
         gameObjects.xonix.render(canvas);
-        window.requestAnimationFrame(function () { setTimeout(callback, 50); });
-    }
+        for (var key in gameObjects.balls)
+            gameObjects.balls[key].render(canvas);
+        window.requestAnimationFrame(function () { setTimeout(callback, 30); });
+    };
 
-    return {
+    var game = {
         start: function (level) {
             console.log("game starting");
             lvl = typeof level === "number" ? level : 1;
+            isRuning = true;
             initUI();
             loadResources();
             createGameObjects();
             run();
             console.log("game started");
         },
+        stop: function () {
+            isRuning = false;
+            window.onkeydown = function () { };
+        },
         getCanvas: function () {
             return canvas;
         },
         ongameover: function () { },
         onlevelclear: function () { }
-    }
+    };
+    return game;
 })();
+
+xonixGame.onlevelclear = function () {
+    console.log("level clear");
+    xonixGame.stop();
+    xonixGame.start(2);
+}
+
+xonixGame.ongameover = function () {
+    console.log("game over");
+    xonixGame.stop();
+}
 
 window.onload = xonixGame.start;
