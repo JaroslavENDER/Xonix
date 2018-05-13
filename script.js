@@ -27,7 +27,7 @@ var xonixGame = (function () {
                         break;
                 }
             }
-        }, 2000);
+        }, 1000);
     }
     var loadResources = function () {
         resources = {};
@@ -98,61 +98,69 @@ var xonixGame = (function () {
                 if (area[xonixX] && area[xonixX][xonixY] === 0)
                     return true;
             };
+            var foreach = function (f) {
+                var result;
+                for (var x = 0; x < width; x++)
+                    for (var y = 0; y < height; y++)
+                        result = f(x, y);
+                return result;
+            };
             var tryCut = (function () {
-                var fillAreaPart = function (area, part, startX, startY) {
+                var createAreaPart = function () {
+                    return { size: 0, cells: [] };
+                }
+                var fillAreaPart = function (area, part, startX, startY, n) {
                     if (!area[startX] || !area[startX][startY] || area[startX][startY] !== 1)
-                        return;
-                    area[startX][startY] = 3;
+                        return part;
+                    area[startX][startY] = n;
                     part.size++;
                     part.cells.push({ x: startX, y: startY });
-                    fillAreaPart(area, part, startX + 1, startY);
-                    fillAreaPart(area, part, startX - 1, startY);
-                    fillAreaPart(area, part, startX, startY + 1);
-                    fillAreaPart(area, part, startX, startY - 1);
-
+                    fillAreaPart(area, part, startX + 1, startY, n);
+                    fillAreaPart(area, part, startX - 1, startY, n);
+                    fillAreaPart(area, part, startX, startY + 1, n);
+                    fillAreaPart(area, part, startX, startY - 1, n);
+                    return part;
                 };
                 return function () {
-                    for (var x = 0; x < width; x++)
-                        for (var y = 0; y < height; y++)
-                            if (area[x][y] === 2)
-                                area[x][y] = 0;
-                    var areaParts = [];
-                    for (var x = 0; x < width; x++)
-                        for (var y = 0; y < height; y++)
-                            if (area[x][y] === 1) {
-                                var part = {
-                                    size: 0,
-                                    cells: []
-                                };
-                                fillAreaPart(area, part, x, y);
-                                areaParts.push(part);
-                            }
-                    for (var x = 0; x < width; x++)
-                        for (y = 0; y < height; y++)
-                            if (area[x][y] === 3)
-                                area[x][y] = 1;
-                    if (areaParts.length < 2)
-                        return areaParts[0].size;
-                    var minPart = areaParts.sort(function (a, b) { return a.size - b.size; })[0];
+                    foreach(function (x, y) {
+                        if (area[x][y] === 2)
+                            area[x][y] = 0;
+                    });
+                    for (var key in gameObjects.balls) {
+                        var ballToAreaX = Math.round((gameObjects.balls[key].getX() - offsetX) / cellSize);
+                        var ballToAreaY = Math.round((gameObjects.balls[key].getY() - offsetY) / cellSize);
+                        fillAreaPart(area, createAreaPart(), ballToAreaX, ballToAreaY, 3);
+                    }
+                    var areaPartsWithoutBalls = [];
+                    foreach(function (x, y) {
+                        if (area[x][y] === 1)
+                            areaPartsWithoutBalls.push(fillAreaPart(area, createAreaPart(), x, y, 3));
+                    });
+                    foreach(function (x, y) {
+                        if (area[x][y] === 3)
+                            area[x][y] = 1;
+                    });
+                    if (areaPartsWithoutBalls.length === 0)
+                        return;
+                    var minPart = areaPartsWithoutBalls.sort(function (a, b) { return a.size - b.size; })[0];
                     for (var key in minPart.cells)
                         area[minPart.cells[key].x][minPart.cells[key].y] = 0;
-                    return areaParts[areaParts.length - 1].size;
                 }
             })();
             return {
                 render: function (canvas) {
-                    for (var x = 0; x < width; x++)
-                        for (var y = 0; y < height; y++)
-                            switch (area[x][y]) {
-                                case 1:
-                                    canvas.fillRect(offsetX + x * cellSize, offsetY + y * cellSize, cellSize, cellSize);
-                                    break;
-                                case 2:
-                                    canvas.fillStyle = "#940088";
-                                    canvas.fillRect(offsetX + x * cellSize, offsetY + y * cellSize, cellSize, cellSize);
-                                    canvas.fillStyle = "#000";
-                                    break;
-                            }
+                    foreach(function (x, y) {
+                        switch (area[x][y]) {
+                            case 1:
+                                canvas.fillRect(offsetX + x * cellSize, offsetY + y * cellSize, cellSize, cellSize);
+                                break;
+                            case 2:
+                                canvas.fillStyle = "#940088";
+                                canvas.fillRect(offsetX + x * cellSize, offsetY + y * cellSize, cellSize, cellSize);
+                                canvas.fillStyle = "#000";
+                                break;
+                        }
+                    });
                 },
                 update: function () {
                     var xonixToAreaX = Math.round((gameObjects.xonix.getX() - offsetX) / cellSize);
@@ -163,7 +171,7 @@ var xonixGame = (function () {
                     }
                     if (isXonixOut(xonixToAreaX, xonixToAreaY)) {
                         isXonixIn = false;
-                        this.currentSize = tryCut();
+                        tryCut();
                     }
                 },
                 isLayer: function (X, Y) {
@@ -176,11 +184,28 @@ var xonixGame = (function () {
                     var screenToLayerY = Math.round((Y - offsetY) / cellSize);
                     return area[screenToLayerX] && area[screenToLayerX][screenToLayerY] === 2;
                 },
-                fullSize: width * height
+                fullSize: width * height,
+                //getCurrentSize: function () {
+                //    var result = foreach((function () {
+                //        var size = 0;
+                //        return function (x, y) {
+                //            if (area[x][y] === 1)
+                //                return ++size;
+                //        }
+                //    })());
+                //    return result;
+                getCurrentSize: function () {
+                    var size = 0;
+                    for (var x = 0; x < width; x++)
+                        for (var y = 0; y < height; y++)
+                            if (area[x][y] === 1)
+                                size++;
+                    return size;
+                }
             }
         })();
         gameObjects.balls = [];
-        for (var i = 0; i < 1 * 2; i++)
+        for (var i = 0; i < lvl * 2; i++)
             gameObjects.balls.push((function () {
                 var x = Math.random() * (width - 80) + 40;
                 var y = Math.random() * (height - 80) + 40;
@@ -204,7 +229,7 @@ var xonixGame = (function () {
                         canvas.arc(x, y, 5, 0, Math.PI * 2, false);
                         canvas.closePath();
                         canvas.fillStyle = "blue";
-                        canvas.fill();  
+                        canvas.fill();
                         canvas.fillStyle = "#000";
                     },
                     update: function () {
@@ -216,13 +241,15 @@ var xonixGame = (function () {
                             offsetX *= -1;
                         x += offsetX;
                         y += offsetY;
-                    }
+                    },
+                    getX: function () { return x; },
+                    getY: function () { return y; }
                 }
             })());
     }
     var run = function () {
         if (!isRuning) return;
-        if ((gameObjects.layer.currentSize / gameObjects.layer.fullSize) < .25)
+        if ((gameObjects.layer.getCurrentSize() / gameObjects.layer.fullSize) < .25)
             game.onlevelclear();
         update();
         render(run);
@@ -245,14 +272,13 @@ var xonixGame = (function () {
 
     var game = {
         start: function (level) {
-            console.log("game starting");
             lvl = typeof level === "number" ? level : 1;
             isRuning = true;
             initUI();
             loadResources();
             createGameObjects();
             run();
-            console.log("game started");
+            console.log(lvl == 1 ? "game started" : "new level started");
         },
         stop: function () {
             isRuning = false;
@@ -261,17 +287,28 @@ var xonixGame = (function () {
         getCanvas: function () {
             return canvas;
         },
+        getLevel: function () {
+            return lvl;
+        },
         ongameover: function () { },
         onlevelclear: function () { }
     };
     return game;
 })();
 
-xonixGame.onlevelclear = function () {
-    console.log("level clear");
-    xonixGame.stop();
-    xonixGame.start(2);
-}
+xonixGame.onlevelclear = (function () {
+    var maxLevel = 2;
+    return function () {
+        console.log("level clear");
+        xonixGame.stop();
+        var level = xonixGame.getLevel();
+        if (level === maxLevel) {
+            console.log("you win");
+            return;
+        }
+        xonixGame.start(level + 1);
+    }
+})();
 
 xonixGame.ongameover = function () {
     console.log("game over");
