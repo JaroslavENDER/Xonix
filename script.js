@@ -126,11 +126,11 @@ var xonixGame = (function () {
                         if (area[x][y] === 2)
                             area[x][y] = 0;
                     });
-                    for (var key in gameObjects.balls) {
-                        var ballToAreaX = Math.round((gameObjects.balls[key].getX() - offsetX) / cellSize);
-                        var ballToAreaY = Math.round((gameObjects.balls[key].getY() - offsetY) / cellSize);
+                    gameObjects.balls.forEach(function (ball) {
+                        var ballToAreaX = Math.round((ball.getX() - offsetX) / cellSize);
+                        var ballToAreaY = Math.round((ball.getY() - offsetY) / cellSize);
                         fillAreaPart(area, createAreaPart(), ballToAreaX, ballToAreaY, 3);
-                    }
+                    });
                     var areaPartsWithoutBalls = [];
                     foreach(function (x, y) {
                         if (area[x][y] === 1)
@@ -140,11 +140,8 @@ var xonixGame = (function () {
                         if (area[x][y] === 3)
                             area[x][y] = 1;
                     });
-                    if (areaPartsWithoutBalls.length === 0)
-                        return;
-                    var minPart = areaPartsWithoutBalls.sort(function (a, b) { return a.size - b.size; })[0];
-                    for (var key in minPart.cells)
-                        area[minPart.cells[key].x][minPart.cells[key].y] = 0;
+                    if (areaPartsWithoutBalls.length !== 0)
+                        areaPartsWithoutBalls.sort(function (a, b) { return a.size - b.size; })[0].cells.forEach(function (cell) { area[cell.x][cell.y] = 0; });
                 }
             })();
             return {
@@ -257,16 +254,18 @@ var xonixGame = (function () {
     var update = function () {
         gameObjects.xonix.update();
         gameObjects.layer.update();
-        for (var key in gameObjects.balls)
-            gameObjects.balls[key].update();
+        gameObjects.balls.forEach(function (ball) {
+            ball.update();
+        });
     }
     var render = function (callback) {
         canvas.clearRect(0, 0, width, height);
         canvas.drawImage(resources.background, 0, 0 - (resources.background.height - height) / 2);
         gameObjects.layer.render(canvas);
         gameObjects.xonix.render(canvas);
-        for (var key in gameObjects.balls)
-            gameObjects.balls[key].render(canvas);
+        gameObjects.balls.forEach(function (ball) {
+            ball.render(canvas);
+        });
         window.requestAnimationFrame(function () { setTimeout(callback, 30); });
     };
 
