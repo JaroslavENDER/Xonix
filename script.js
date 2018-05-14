@@ -8,26 +8,27 @@ var xonixGame = (function () {
     var isRuning;
     var directions = { up: 1, right: 2, bottom: 3, left: 4 };
 
-    var initUI = function () {
+    var initUI = function (isPreview) {
         canvas = document.getElementById("canvas").getContext("2d");
-        setTimeout(function () {
-            window.onkeydown = function (e) {
-                switch (e.keyCode) {
-                    case 37:
-                        gameObjects.xonix.setDirection(directions.left);
-                        break;
-                    case 38:
-                        gameObjects.xonix.setDirection(directions.up);
-                        break;
-                    case 39:
-                        gameObjects.xonix.setDirection(directions.right);
-                        break;
-                    case 40:
-                        gameObjects.xonix.setDirection(directions.bottom);
-                        break;
+        if (!isPreview)
+            setTimeout(function () {
+                window.onkeydown = function (e) {
+                    switch (e.keyCode) {
+                        case 37:
+                            gameObjects.xonix.setDirection(directions.left);
+                            break;
+                        case 38:
+                            gameObjects.xonix.setDirection(directions.up);
+                            break;
+                        case 39:
+                            gameObjects.xonix.setDirection(directions.right);
+                            break;
+                        case 40:
+                            gameObjects.xonix.setDirection(directions.bottom);
+                            break;
+                    }
                 }
-            }
-        }, 1000);
+            }, 1000);
     }
     var loadResources = function () {
         resources = {};
@@ -246,7 +247,7 @@ var xonixGame = (function () {
     }
     var run = function () {
         if (!isRuning) return;
-        if ((gameObjects.layer.getCurrentSize() / gameObjects.layer.fullSize) < .25)
+        if ((gameObjects.layer.getCurrentSize() / gameObjects.layer.fullSize) < .20)
             game.onlevelclear();
         update();
         render(run);
@@ -270,14 +271,16 @@ var xonixGame = (function () {
     };
 
     var game = {
-        start: function (level) {
-            lvl = typeof level === "number" ? level : 1;
-            isRuning = true;
-            initUI();
-            loadResources();
-            createGameObjects();
-            run();
-            console.log(lvl == 1 ? "game started" : "new level started");
+        start: function (level, isPreview) {
+            this.stop();
+            setTimeout(function () {
+                lvl = typeof level === "number" ? level : 1;
+                isPreview ? initUI(true) : initUI(false);
+                loadResources();
+                createGameObjects();
+                isRuning = true;
+                run();
+            }, 100);
         },
         stop: function () {
             isRuning = false;
@@ -295,23 +298,37 @@ var xonixGame = (function () {
     return game;
 })();
 
-xonixGame.onlevelclear = (function () {
-    var maxLevel = 2;
-    return function () {
-        console.log("level clear");
+window.onload = function () {
+    var maxLevel = 5;
+    var ui = document.getElementById("ui");
+    var uiHeader = document.getElementById("ui__header");
+    var buttonPlay = document.getElementById("ui__button-play");
+    var buttonClose = document.getElementById("ui__button-exit");
+    var showUI = function (message) {
+        uiHeader.innerText = message;
+        ui.removeAttribute("hidden");
+    };
+
+    buttonPlay.onclick = function () {
+        ui.setAttribute("hidden", "");
+        xonixGame.start();
+    };
+
+    buttonClose.onclick = function () { window.close(); };
+
+    xonixGame.onlevelclear = function () {
         xonixGame.stop();
         var level = xonixGame.getLevel();
-        if (level === maxLevel) {
-            console.log("you win");
-            return;
-        }
-        xonixGame.start(level + 1);
-    }
-})();
+        if (level === maxLevel)
+            showUI("You win");
+        else
+            xonixGame.start(level + 1);
+    };
 
-xonixGame.ongameover = function () {
-    console.log("game over");
-    xonixGame.stop();
+    xonixGame.ongameover = function () {
+        xonixGame.stop();
+        showUI("Game over");
+    };
+
+    xonixGame.start(1, true);
 }
-
-window.onload = xonixGame.start;
