@@ -202,7 +202,7 @@ var xonixGame = (function () {
             }
         })();
         gameObjects.balls = [];
-        for (var i = 0; i < lvl * 2; i++)
+        for (var i = 0; i < lvl + 1; i++)
             gameObjects.balls.push((function () {
                 var x = Math.random() * (width - 80) + 40;
                 var y = Math.random() * (height - 80) + 40;
