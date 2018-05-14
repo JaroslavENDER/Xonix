@@ -1,19 +1,21 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html>
 <head>
-	<meta charset="utf-8">
-	<title>Xonix game</title>
-	<style>
-		canvas{
-			display: block;
-			width: 95%;
-			max-width: 700px;
-			margin: auto;
-		}
-	</style>
+    <meta charset="utf-8">
+    <title>Xonix game</title>
+    <link href="style.css" rel="stylesheet" />
+    <script src="script.js"></script>
 </head>
 <body>
-	<canvas id="canvas" width="640" height="360"></canvas>
-	<script src="script.js"></script>
+    <div class="screen">
+        <div id="ui" >
+            <div id="ui__header">Xonix</div>
+            <div id="ui__buttons">
+                <button class="ui__button" id="ui__button-play">Play</button>
+                <button class="ui__button" id="ui__button-exit">Exit</button>
+            </div>
+        </div>
+        <canvas id="canvas" width="640" height="360"></canvas>
+    </div>
 </body>
 </html>
