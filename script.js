@@ -4,6 +4,10 @@ window.onload = function () {
     var uiHeader = document.getElementById("ui__header");
     var buttonPlay = document.getElementById("ui__button-play");
     var buttonClose = document.getElementById("ui__button-exit");
+    var buttonUp = document.getElementById("arrows__button-up");
+    var buttonLeft = document.getElementById("arrows__button-left");
+    var buttonRight = document.getElementById("arrows__button-right");
+    var buttonDown = document.getElementById("arrows__button-down");
     var showUI = function (message) {
         uiHeader.innerText = message;
         ui.removeAttribute("hidden");
@@ -46,7 +50,19 @@ window.onload = function () {
                     xonixGame.setDirection(xonixGame.directions.bottom);
                     break;
             }
-        }
+        };
+        buttonUp.onclick = function () {
+            xonixGame.setDirection(xonixGame.directions.up);
+        };
+        buttonLeft.onclick = function () {
+            xonixGame.setDirection(xonixGame.directions.left);
+        };
+        buttonRight.onclick = function () {
+            xonixGame.setDirection(xonixGame.directions.right);
+        };
+        buttonDown.onclick = function () {
+            xonixGame.setDirection(xonixGame.directions.bottom);
+        };
     });
 
     xonixGame.start(1, true);
