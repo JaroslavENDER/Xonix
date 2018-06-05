@@ -30,5 +30,24 @@ window.onload = function () {
         showUI("Game over");
     };
 
+    xonixGame.setUIControls(function () {
+        window.onkeydown = function (e) {
+            switch (e.keyCode) {
+                case 37:
+                    xonixGame.setDirection(xonixGame.directions.left);
+                    break;
+                case 38:
+                    xonixGame.setDirection(xonixGame.directions.up);
+                    break;
+                case 39:
+                    xonixGame.setDirection(xonixGame.directions.right);
+                    break;
+                case 40:
+                    xonixGame.setDirection(xonixGame.directions.bottom);
+                    break;
+            }
+        }
+    });
+
     xonixGame.start(1, true);
 }

@@ -6,29 +6,12 @@ var xonixGame = (function () {
     var height = 360
     var lvl;
     var isRuning;
-    var directions = { up: 1, right: 2, bottom: 3, left: 4 };
+    var initializeUIControls;
 
     var initUI = function (isPreview) {
         canvas = document.getElementById("canvas").getContext("2d");
         if (!isPreview)
-            setTimeout(function () {
-                window.onkeydown = function (e) {
-                    switch (e.keyCode) {
-                        case 37:
-                            gameObjects.xonix.setDirection(directions.left);
-                            break;
-                        case 38:
-                            gameObjects.xonix.setDirection(directions.up);
-                            break;
-                        case 39:
-                            gameObjects.xonix.setDirection(directions.right);
-                            break;
-                        case 40:
-                            gameObjects.xonix.setDirection(directions.bottom);
-                            break;
-                    }
-                }
-            }, 1000);
+            setTimeout(initializeUIControls, 1000);
     }
     var loadResources = function () {
         resources = {};
@@ -54,16 +37,16 @@ var xonixGame = (function () {
                 setDirection: function (direction) {
                     currentOffsetX = currentOffsetY = 0;
                     switch (direction) {
-                        case directions.up:
+                        case game.directions.up:
                             currentOffsetY = -maxVelocity;
                             break;
-                        case directions.bottom:
+                        case game.directions.bottom:
                             currentOffsetY = maxVelocity;
                             break;
-                        case directions.left:
+                        case game.directions.left:
                             currentOffsetX = -maxVelocity;
                             break;
-                        case directions.right:
+                        case game.directions.right:
                             currentOffsetX = maxVelocity;
                             break;
                     }
@@ -289,6 +272,13 @@ var xonixGame = (function () {
         getCanvas: function () {
             return canvas;
         },
+        setUIControls: function (f) {
+            initializeUIControls = f;
+        },
+        setDirection: function (direction) {
+            gameObjects.xonix.setDirection(direction);
+        },
+        directions: { up: 1, right: 2, bottom: 3, left: 4 },
         getLevel: function () {
             return lvl;
         },
